@@ -1,3 +1,8 @@
+const Source = require('./source')
+const Context = require('./context')
+const next = require('./tokenize')
+const {TK} = require('./consts')
+
 // expr: NUMBER
 // | OP expr
 // | ( expr )
@@ -7,65 +12,47 @@
 //            | expr
 // program    : [statement ';']
 
-function parse(tokens) {
-  let tk
-  const indents = []
-  const indent = () => indents.push('  ')
-  const unindent = () => indents.pop()
-  const indentcall = (fn) => { indent(); fn(); unindent()  }
-
-  // execute
-  statement()
-
-  function next() {
-    tk = tokens.length ? tokens.shift() : null
-    // logging
-    if (tk) {
-      if (tk.value === '{' || tk.value === '}' || tk.value === ';') {
-        // tk.value
-      } else {
-        process.stdout.write(tk.value + ' ')
-      }
-    }
-  }
-
-  function statement() {
-    while (!tk || tk.type === 'EOL') next()
-    if (tk.value === 'while') {
-      next('('); expr(); next(')')
-      block()
-    } else if (tk.type === 'IDENTIFIER') {
-      expr()
-    } else if (tk.type === 'EOL') {
-      next()
-    }
-  }
-
-  function block() {
-    next('{')
-    while (tk && tk.value !== '}') {
-      statement()
-    }
-    next('}')
-  }
-
-  function expr() {
-    if (tk && tk.type === 'EOL') return
+function statement() {
+  if (!Context.token && !Source.eof()) next()
+  while (Context.token === ';') next()
+  // console.log('statement', Context.token)
+  if (!Source.eof() && Context.token === TK.While) {
+    next('('); expr(); next(')')
+    block()
+  } else if (Context.type === TK.Ident) {
+    expr()
+  } else if (Context.token === ';') {
     next()
-    if (!tk) return
-    if (tk.value === '(') {
-      while (tk && tk.value !== ')') expr()
-      next(')')
-    } else if (tk.type === 'OPERATOR' && tk.value !== ')') {
-      expr()
-    } else if (tk.type === 'NUMBER') {
-      expr()
-    } else if (tk.type === 'EOL') {
-      next(';')
-    } else if (tk.type === 'IDENTIFIER') {
-      expr()
-    }
   }
 }
 
-module.exports = parse
+function block() {
+  next('{')
+  while (!Source.eof() && Context.token !== '}') {
+    statement()
+  }
+  next('}')
+}
+
+function expr(level) {
+  if (Source.eof()) return
+  if (!Source.eof() && Context.token === ';') return
+  next()
+
+  const {token, type} = Context
+
+  if (token === '(') {
+    while (token && token !== ')') expr()
+    next(')')
+  } else if ('+-*/='.indexOf(token) >= 0) {
+    expr()
+  } else if (type === TK.Num) {
+    expr()
+  } else if (token === ';') {
+    next(';')
+  } else if (type === TK.Ident) {
+    expr()
+  }
+}
+
+module.exports = statement
