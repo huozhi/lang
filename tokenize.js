@@ -1,69 +1,54 @@
-const OPERS = '()<>+-*/='
-const SIGNS = '{}'
-const KEY_WORDS = ['while', 'if', 'else']
-
-function isKeyWord(ident) {
-  return ~KEY_WORDS.indexOf(ident)
-}
-
-function isSign(chr) {
-  return ~SIGNS.indexOf(chr[0])
-}
-
-function isOper(chr) {
-  return ~OPERS.indexOf(chr[0])
-}
+const {TK} = require('./consts')
+const Source = require('./source')
+const Context = require('./context')
 
 function isDigit(chr) {
-  chr = chr[0]
   return chr >= '0' && chr <= '9'
 }
 
 function isAlpha(chr) {
-  chr = chr[0]
   return (chr >= 'a' && chr <= 'z') || (chr >= 'A' && chr <= 'Z')
 }
 
-function tokenize(s) {
-  let i = 0
-  const tokens = []
-  while (i < s.length) {
-    if (isDigit(s[i])) {
+function next() {
+  while (!Source.eof()) {
+    const ch = Source.read()
+
+    if (isDigit(ch)) {
       let value = 0
-      while (isDigit(s[i])) {
-        value = value * 10 + (+s[i++])
+      while (isDigit(Source.val)) {
+        value = value * 10 + (+Source.read())
       }
-      tokens.push({
-        type: 'NUMBER',
-        value,
-      })
-    } else if (isAlpha(s[i]) || s[i] === '_') {
-      let ident = ''
-      while (isAlpha(s[i]) || s[i] === '_' || isDigit(s[i])) ident += s[i++]
-      tokens.push({
-        type: isKeyWord(ident) ? 'KEYWORD' : 'IDENTIFIER',
-        value: ident,
-      })
-    } else if (isOper(s[i])) {
-      tokens.push({
-        type: 'OPERATOR',
-        value: s[i++],
-      })
-    } else if (isSign(s[i])) {
-      tokens.push({
-        type: 'SIGN',
-        value: s[i++],
-      })
-    } else if (s[i] === ';') {
-      tokens.push({
-        type: 'EOL',
-        value: s[i++],
-      })
-    } else {
-      i++
+      Context.token = value
+      Context.type = TK.Num
+
+      return
+    } else if (isAlpha(ch) || ch === '_') {
+      let ident = ch
+      while (isAlpha(Source.val) || Source.val === '_' || isDigit(Source.val)) {
+        // console.log('isAlpha', Source.val, isAlpha(Source.val))
+        ident += Source.read()
+      }
+      // console.log('ident', ident, Context.token, TK.While)
+      if (ident === 'while') Context.token = TK.While
+      else if (ident === 'if') Context.token = TK.If
+      else if (ident === 'else') Context.token = TK.Else
+      else {
+        // TODO: store in symbol table
+        Context.token = ident
+        Context.type = TK.Ident
+      }
+      return
     }
+    else if (ch === '+') { Context.token = TK.Add; return }
+    else if (ch === '-') { Context.token = TK.Sub; return }
+    else if (ch === '*') { Context.token = TK.Mul; return }
+    else if (ch === '/') { Context.token = TK.Div; return }
+    else if (ch === '=') { Context.token = TK.Assign; return }
+    else if (ch === '(' || ch === ')' || ch === '{' || ch === '}' || ch === ';') { Context.token = ch; return }
   }
+
   return tokens
 }
 
-module.exports = tokenize
+module.exports = next

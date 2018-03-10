@@ -1,78 +1,38 @@
-const poolsize = 256 * 256
+const {ASM, POO_LSIZE} = require('./consts')
+const REG = require('./register')
 
-class Stack {
-  constructor(start) {
-    this._data = Array(poolsize)
-    this._index = start || 0
-  }
+// let data
+//
+// let pc // program counter
+// let bp // base pointer
+// let sp // stack pointer
 
-  get inc() { return this._data[this._index++] }
-  set inc(val) { return this._data[this._index++] = val }
+// pc = new Stack(0)
+// bp = sp = new Stack(poolsize) // ?? change to index
 
-  get dec() { return this._data[--this._index] }
-  set dec(val) { return this._data[--this._index] = val }
+function vm(text) {
+  for (let i = 0; i < text.length; i++) REG.pc.inc = text[i]
+  REG.pc.i = 0
 
-  set i(val) { this._index = val }
-  get back() { return this._data[this._data.length - 1] }
-  get front() { return this._data[0] }
-}
-
-let text
-let data
-
-let pc // program counter
-let bp // base pointer
-let sp // stack pointer
-
-pc = new Stack(0)
-bp = sp = new Stack(poolsize) // ?? change to index
-
-let ax = 0
-let cycle
-
-const current = (arr) => arr[arr.length - 1]
-
-const [
-  LEV, // leave: pop stack
-  IMM,
-  LI, LC, // load int, load char
-  SI, SC, // save int, save char
-  PUSH,
-  ADD,
-  EXIT,
-] = Array(100).fill().map((_, i) => 128 + i)
-
-let op
-let tmp
-
-function eval() {
+  let op
   while (true) {
-    op = pc.inc
-    console.log('op', op)
-    if (op === IMM) { ax = pc.inc }
-    else if (op === LC || op === LI) { ax = ax } // ?
-    else if (op === SC || op === SI) { sp.inc = ax }
-    else if (op === PUSH) { sp.dec = ax }
-    else if (op === ADD) { ax = sp.inc + ax }
+    op = REG.pc.inc
+    // console.log('op', op)
+
+    if (op === ASM.IMM) { REG.ax = REG.pc.inc }
+    else if (op === ASM.LC || op === ASM.LI || op === ASM.LV) { REG.ax = REG.ax } // TODO: load real address
+    else if (op === ASM.SC || op === ASM.SI || op === ASM.SV) { REG.sp.inc = REG.ax }
+    else if (op === ASM.PUSH) { REG.sp.dec = REG.ax }
+
+    else if (op === ASM.ADD) { REG.ax = REG.sp.inc + REG.ax }
+    else if (op === ASM.SUB) { REG.ax = REG.sp.inc - REG.ax }
+    else if (op === ASM.MUL) { REG.ax = REG.sp.inc * REG.ax }
+    else if (op === ASM.DIV) { REG.ax = REG.sp.inc / REG.ax }
     else {
       return
     }
   }
+
 }
 
-text = new Stack()
-text.inc = IMM
-text.inc = 3
-text.inc = PUSH
-text.inc = IMM
-text.inc = 20
-text.inc = ADD
-text.inc = PUSH
-text.inc = EXIT
-pc = text
-pc.i = 0
-
-
-eval()
-
-console.log(sp.back)
+module.exports = vm
