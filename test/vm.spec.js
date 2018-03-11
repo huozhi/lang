@@ -1,8 +1,8 @@
 const {ASM} = require('../consts')
 const REG = require('../register')
-const vm = require('../vm')
+const VM = require('../vm')
 
-const commands = [
+const VM.emitted = [
   ASM.IMM,
   3,
   ASM.PUSH,
@@ -13,5 +13,6 @@ const commands = [
   ASM.EXIT,
 ]
 
-vm(commands)
+VM.execute()
+
 console.log(REG.sp.back)

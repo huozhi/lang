@@ -13,14 +13,14 @@ function isAlpha(chr) {
 function next() {
   while (!Source.eof()) {
     const ch = Source.read()
-
+    // console.log('ch [', ch, ']')
     if (isDigit(ch)) {
-      let value = 0
+      let value = (+ch)
       while (isDigit(Source.val)) {
         value = value * 10 + (+Source.read())
       }
-      Context.token = value
-      Context.type = TK.Num
+      Context.value = value
+      Context.token = TK.Num
 
       return
     } else if (isAlpha(ch) || ch === '_') {
@@ -35,8 +35,8 @@ function next() {
       else if (ident === 'else') Context.token = TK.Else
       else {
         // TODO: store in symbol table
-        Context.token = ident
-        Context.type = TK.Ident
+        Context.token = TK.Ident
+        Context.value = ident
       }
       return
     }
@@ -47,8 +47,6 @@ function next() {
     else if (ch === '=') { Context.token = TK.Assign; return }
     else if (ch === '(' || ch === ')' || ch === '{' || ch === '}' || ch === ';') { Context.token = ch; return }
   }
-
-  return tokens
 }
 
 module.exports = next

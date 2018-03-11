@@ -1,6 +1,7 @@
 const Context = {
-  type: null,
+  type: null, // TODO: type sys
   token: null,
+  value: null,
 }
 
 module.exports = Context
