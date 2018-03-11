@@ -12,16 +12,18 @@ class SimulatePointer {
   get dec() { return this._data[--this._index] }
   set dec(val) { return this._data[--this._index] = val }
 
-  set i(val) { this._index = val }
+  // set i(val) { this._index = val }
 
   get val() { return this._data[this._index] }
   get back() { return this._data[this._data.length - 1] }
   get front() { return this._data[0] }
+
+  receive(data, index) { this._data = data; this._index = index; }
 }
 
 const REG = {
   ax: 0, // value register
-  dx: 0, // address register, program counter index
+  bx: 0, // address register, program counter index
   pc: null,
   bp: null,
   sp: null,
