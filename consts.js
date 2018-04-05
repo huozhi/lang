@@ -16,7 +16,7 @@ const Enum = (keys, start = 1) => {
 const POO_LSIZE = 1024
 
 const ASM = Const([
-  'LEV', 'IMM',
+  'LEA', 'IMM', 'ENT',
   // save value / load value -- simulation
   'LI', 'SI', 'LC', 'SC', 'SV', 'LV', 'PUSH',
   'ADD', 'SUB', 'MUL', 'DIV',
@@ -24,7 +24,7 @@ const ASM = Const([
 ])
 
 const TK = Enum([
-  'Num', 'Str', 'Ident',
+  'Num', 'Global', 'Ident', 'Str',
   'Else', 'If', 'Var', 'Return', 'While',
   'Assign', 'Add', 'Sub', 'Mul', 'Div',
 ])
