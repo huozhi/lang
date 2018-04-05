@@ -1,5 +1,5 @@
 const Context = {
-  type: null, // TODO: type sys
+  // type: null, // TODO: type sys
   token: null,
   value: null,
 }

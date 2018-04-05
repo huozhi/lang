@@ -1,7 +1,7 @@
-const REG = require('./register')
 const Source = require('./source')
 const Context = require('./context')
 const next = require('./tokenize')
+const SymbolTable = require('./symbol-table')
 const {emitted} = require('./vm')
 const {ASM, TK} = require('./consts')
 
@@ -14,23 +14,22 @@ const error = (message = '') => { throw new Error('PARSE ERR: ' + message) }
 // statement  : 'if' expr block ['else' block]
 //            | 'while' expr block
 //            | expr
+//            | ident = expr
 // program    : [statement ';']
 
 function statement() {
   if (!Context.token && !Source.eof()) next()
-  while (Context.token === ';') next()
-  // console.log('statement', Context.token)
+
   if (!Source.eof() && Context.token === TK.While) {
     next('('); expr(); next(')')
     block()
   } else if (Context.token === '{') {
     block()
   } else if (Context.token === ';') {
-    next()
+    next() // // empty statement
   } else {
-    // console.log('')
     expr(TK.Assign)
-    if (Context.token === ';') { next(';') } else { error(`expected ; ${TK.expect(Context.token)}`) }
+    if (Context.token === ';') { next(';') } else { error(`expected ; but get ${TK.expect(Context.token)}`) }
   }
 }
 
@@ -53,7 +52,23 @@ function expr(level) {
   } else if (Context.token === '(') {
     next('(')
     expr(TK.Assign)
-    if (Context.token === ')') { next(')') } else { error('missing brace') }
+    if (Context.token === ')') { 
+      next(')') 
+    } else { 
+      error('missing brace') 
+    }
+  } else if (Context.token === TK.Ident) {
+    next() // Ident
+    const symbol = SymbolTable.current()
+
+    if (symbol.class === TK.Global) {
+      emitted.push(ASM.IMM)
+      emitted.push(symbol.value) // data address
+    }
+    emitted.push(ASM.LV)
+    // Assume as global var 
+    
+    
   }
 
   while (Context.token >= level) {
@@ -64,10 +79,23 @@ function expr(level) {
     else if (Context.token === TK.Div) { next(); emitted.push(ASM.PUSH); expr(TK.Inc); emitted.push(ASM.DIV) }
     else if (Context.token === ';') {
       next(';')
-    } else if (Context.token === TK.Ident) {
-      // TODO: token is identifier
-    } else { error('parsing fail ' + Context.token) }
+    }
+    else if (Context.token === TK.Assign) {
+      next('=')
+      // console.log('emitted.top', emitted.top)
+      if (emitted.top === ASM.LV) { emitted.pop(); emitted.push(ASM.PUSH) }
+      expr(TK.Assign)
+      emitted.push(ASM.SV)
+    }
+     
+    else { error('parsing fail ' + Context.token) }
   }
 }
 
-module.exports = statement
+function parse() {
+  while (!Source.eof()) {
+    statement()
+  }
+}
+
+module.exports = parse

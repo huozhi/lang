@@ -1,32 +1,42 @@
 const {ASM, POO_LSIZE} = require('./consts')
-const REG = require('./register')
+const {Store} = require('./storage')
 
 function execute(text) {
-  REG.pc.receive(text, 0)
+  Store.pc.receive(text, 0)
 
   let op
   while (true) {
-    op = REG.pc.inc
-    // console.log('op', op)
-    if (op === ASM.IMM) { REG.ax = REG.pc.inc }
-    else if (op === ASM.LC || op === ASM.LI || op === ASM.LV) { REG.ax = REG.ax } // TODO: load real address
-    else if (op === ASM.SC || op === ASM.SI || op === ASM.SV) { REG.sp.inc = REG.ax }
-    else if (op === ASM.PUSH) { REG.sp.dec = REG.ax }
+    op = Store.pc.inc
 
-    else if (op === ASM.ADD) { REG.ax = REG.sp.inc + REG.ax }
-    else if (op === ASM.SUB) { REG.ax = REG.sp.inc - REG.ax }
-    else if (op === ASM.MUL) { REG.ax = REG.sp.inc * REG.ax }
-    else if (op === ASM.DIV) { REG.ax = REG.sp.inc / REG.ax }
+    if (op === ASM.IMM) { Store.ax = Store.pc.inc }
+    else if (op === ASM.LV) {
+      Store.ax = Store.ax.load()
+    }
+    else if (op === ASM.SV) { 
+      Store.sp.val.assign(Store.ax)
+      Store.sp.inc
+    }
+    else if (op === ASM.PUSH) { Store.sp.dec = Store.ax }
+
+    else if (op === ASM.ADD) { Store.ax = Store.sp.inc + Store.ax }
+    else if (op === ASM.SUB) { Store.ax = Store.sp.inc - Store.ax }
+    else if (op === ASM.MUL) { Store.ax = Store.sp.inc * Store.ax }
+    else if (op === ASM.DIV) { Store.ax = Store.sp.inc / Store.ax }
     else {
       break
     }
   }
-  // console.log('sp', REG.sp, 'ax', REG.ax)
 }
 
 const VM = {
   emitted: [],
   execute: () => execute(VM.emitted),
+  load: (commands) => VM.emitted.push.apply(...commands),
 }
+
+Object.defineProperty(VM.emitted, 'top', {
+  get: () => VM.emitted[VM.emitted.length - 1],
+  set: (value) => { VM.emitted[VM.emitted.length - 1] = value }
+})
 
 module.exports = VM

@@ -1,8 +1,8 @@
 const {ASM} = require('../consts')
-const REG = require('../register')
+const {Store} = require('../storage')
 const VM = require('../vm')
 
-const VM.emitted = [
+VM.load([
   ASM.IMM,
   3,
   ASM.PUSH,
@@ -11,8 +11,8 @@ const VM.emitted = [
   ASM.ADD,
   ASM.PUSH,
   ASM.EXIT,
-]
+])
 
 VM.execute()
 
-console.log(REG.sp.back)
+console.log(Store.sp.back)

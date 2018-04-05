@@ -1,6 +1,7 @@
 const {TK} = require('./consts')
 const Source = require('./source')
 const Context = require('./context')
+const SymbolTable = require('./symbol-table')
 
 function isDigit(chr) {
   return chr >= '0' && chr <= '9'
@@ -33,10 +34,12 @@ function next() {
       if (ident === 'while') Context.token = TK.While
       else if (ident === 'if') Context.token = TK.If
       else if (ident === 'else') Context.token = TK.Else
+      else if (ident === 'var') Context.token = TK.Var // TODO: define
       else {
-        // TODO: store in symbol table
         Context.token = TK.Ident
         Context.value = ident
+        
+        SymbolTable.insert(ident, {type: TK.Ident, class: TK.Global})
       }
       return
     }
