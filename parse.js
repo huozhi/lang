@@ -15,6 +15,8 @@ const error = (message = '') => { throw new Error('PARSE ERR: ' + message) }
 //            | 'while' expr block
 //            | expr
 //            | ident = expr
+// function   : func fname '(' ... ')' '{' '}'
+// 
 // program    : [statement ';']
 
 function statement() {
@@ -89,6 +91,30 @@ function expr(level) {
     }
      
     else { error('parsing fail ' + Context.token) }
+  }
+}
+
+function func() {
+  next() // function name
+  // params
+  next('(')
+  
+  let paramOffset = 0
+  while (Context.token !== ')') {
+    next()
+    
+    Context.token = TK.Ident
+    Context.value = ident
+    
+    SymbolTable.insert(ident, {type: TK.Ident, class: TK.Local})
+    paramOffset++
+
+    if (Context.token === ',') next(',')
+  }
+  next(')')
+  next('{')
+  while (Context.token !== '}') {
+    statement()
   }
 }
 

@@ -35,6 +35,7 @@ function next() {
       else if (ident === 'if') Context.token = TK.If
       else if (ident === 'else') Context.token = TK.Else
       else if (ident === 'var') Context.token = TK.Var // TODO: define
+      else if (ident === 'func') Context.token = Tk.Func
       else {
         Context.token = TK.Ident
         Context.value = ident

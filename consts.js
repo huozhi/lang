@@ -24,7 +24,7 @@ const ASM = Const([
 ])
 
 const TK = Enum([
-  'Num', 'Global', 'Ident', 'Str',
+  'Num', 'Global', 'Local', 'Ident', 'Str', 'Func',
   'Else', 'If', 'Var', 'Return', 'While',
   'Assign', 'Add', 'Sub', 'Mul', 'Div',
 ])
