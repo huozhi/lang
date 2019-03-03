@@ -1,7 +1,5 @@
-# Interpreter
+# lang 
 > Practice for interpretation of simple handmade language
-
-<img src="https://raw.githubusercontent.com/huozhi/interpreter/master/logo.svg?sanitize=true">
 
 ## About
 
