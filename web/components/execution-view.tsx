@@ -388,6 +388,7 @@ function ResultRow({
   for (const traceStep of trace) {
     resultChars = Math.max(resultChars, valueText(traceStep.after.ax).length)
   }
+  const atEnd = activeStep >= trace.length - 1
 
   return (
     <div className="mt-2 flex items-end justify-between gap-4">
@@ -403,37 +404,14 @@ function ResultRow({
           className={`${resultActionBtn} bg-bg-elevated`}
           disabled={trace.length <= 1}
           aria-pressed={playing}
-          aria-label={playing ? 'Pause auto play' : 'Auto play steps'}
-          onClick={() => setPlaying(!playing)}
-        >
-          <svg
-            aria-hidden="true"
-            className="size-[1.1rem]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="square"
-            strokeLinejoin="miter"
-          >
-            {playing ? (
-              <>
-                <path d="M8 5v14" />
-                <path d="M16 5v14" />
-              </>
-            ) : (
-              <path d="m8 5 11 7-11 7Z" fill="currentColor" stroke="none" />
-            )}
-          </svg>
-        </button>
-        <button
-          type="button"
-          className={`${resultActionBtn} bg-transparent`}
-          disabled={activeStep === 0}
-          aria-label="Restart from first step"
+          aria-label={atEnd ? 'Restart from first step' : playing ? 'Pause auto play' : 'Auto play steps'}
           onClick={() => {
-            setPlaying(false)
-            setActiveStep(0)
+            if (atEnd) {
+              setPlaying(false)
+              setActiveStep(0)
+              return
+            }
+            setPlaying(!playing)
           }}
         >
           <svg
@@ -446,8 +424,19 @@ function ResultRow({
             strokeLinecap="square"
             strokeLinejoin="miter"
           >
-            <path d="M4 4v6h6" />
-            <path d="M4.8 9A8 8 0 1 1 6 17.3" />
+            {atEnd ? (
+              <>
+                <path d="M4 4v6h6" />
+                <path d="M4.8 9A8 8 0 1 1 6 17.3" />
+              </>
+            ) : playing ? (
+              <>
+                <path d="M8 5v14" />
+                <path d="M16 5v14" />
+              </>
+            ) : (
+              <path d="m8 5 11 7-11 7Z" fill="currentColor" stroke="none" />
+            )}
           </svg>
         </button>
       </div>
