@@ -64,6 +64,7 @@ result;`,
 const panelTitle = 'm-0 mb-2 text-[0.72rem] font-normal tracking-[0.14em] text-muted uppercase max-md:mb-1 max-md:text-[0.65rem]'
 const switcherBtn = 'rounded-md bg-bg-elevated px-2 py-0.5 leading-tight text-muted hover:bg-highlight hover:text-fg'
 const transportBtn = 'inline-flex size-8 items-center justify-center rounded-md bg-bg-elevated p-0 text-lg leading-none text-fg hover:bg-highlight hover:text-accent'
+const resultActionBtn = 'inline-flex size-8 items-center justify-center rounded-md p-0 text-muted hover:bg-highlight hover:text-accent disabled:opacity-30'
 const lineRow = '-mx-1.5 grid min-h-[1.55rem] grid-cols-[3ch_1fr] items-start gap-2.5 rounded px-1.5 py-0.5 max-md:min-h-[1.35rem]'
 const sourceLineRow = `${lineRow} relative gap-x-3 max-md:gap-x-2.5`
 const sourceLineHighlight = 'absolute inset-0 z-0 rounded bg-highlight'
@@ -87,8 +88,6 @@ type StateField = {
   name: string
   alias: string
   format: (snapshot: VmTraceStep['after']) => string
-  rowClass: string
-  codeClass: string
 }
 
 const stateFields: StateField[] = [
@@ -96,22 +95,16 @@ const stateFields: StateField[] = [
     name: 'accumulator',
     alias: 'ax',
     format: snapshot => valueText(snapshot.ax),
-    rowClass: 'h-[3.1rem]',
-    codeClass: 'h-[2.1rem] min-h-[2.1rem] max-h-[2.1rem]',
   },
   {
     name: 'value stack',
     alias: 'vs',
     format: snapshot => stackCellText(snapshot.vs),
-    rowClass: 'h-[5.35rem]',
-    codeClass: 'h-[4.35rem] min-h-[4.35rem] max-h-[4.35rem]',
   },
   {
     name: 'environment',
     alias: 'env',
     format: snapshot => envCellText(snapshot.env),
-    rowClass: 'h-[6.85rem]',
-    codeClass: 'h-[5.85rem] min-h-[5.85rem] max-h-[5.85rem]',
   },
 ]
 
@@ -375,7 +368,21 @@ function ProgramSwitcher({
   )
 }
 
-function ResultRow({ step, trace }: { step: VmTraceStep, trace: readonly VmTraceStep[] }) {
+function ResultRow({
+  activeStep,
+  playing,
+  setPlaying,
+  setActiveStep,
+  step,
+  trace,
+}: {
+  activeStep: number
+  playing: boolean
+  setPlaying: (value: boolean) => void
+  setActiveStep: (value: number) => void
+  step: VmTraceStep
+  trace: readonly VmTraceStep[]
+}) {
   const currentResult = valueText(step.after.ax)
   let resultChars = Math.max(currentResult.length, 4)
   for (const traceStep of trace) {
@@ -383,12 +390,68 @@ function ResultRow({ step, trace }: { step: VmTraceStep, trace: readonly VmTrace
   }
 
   return (
-    <p className="mt-2 flex flex-nowrap items-baseline gap-1 overflow-hidden text-sm leading-snug whitespace-nowrap tabular-nums text-muted">
-      <span className="shrink-0">result</span>
-      <span className="min-w-0 truncate text-fg text-2xl" style={{ minWidth: `${resultChars}ch` }}>
-        {currentResult}
-      </span>
-    </p>
+    <div className="mt-2 flex items-end justify-between gap-4">
+      <p className="m-0 flex min-w-0 flex-1 flex-nowrap items-baseline gap-1 overflow-hidden text-sm leading-snug whitespace-nowrap tabular-nums text-muted">
+        <span className="shrink-0">result</span>
+        <span className="min-w-0 truncate text-fg text-2xl" style={{ minWidth: `${resultChars}ch` }}>
+          {currentResult}
+        </span>
+      </p>
+      <div className="inline-flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          className={`${resultActionBtn} bg-bg-elevated`}
+          disabled={trace.length <= 1}
+          aria-pressed={playing}
+          aria-label={playing ? 'Pause auto play' : 'Auto play steps'}
+          onClick={() => setPlaying(!playing)}
+        >
+          <svg
+            aria-hidden="true"
+            className="size-[1.1rem]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="square"
+            strokeLinejoin="miter"
+          >
+            {playing ? (
+              <>
+                <path d="M8 5v14" />
+                <path d="M16 5v14" />
+              </>
+            ) : (
+              <path d="m8 5 11 7-11 7Z" fill="currentColor" stroke="none" />
+            )}
+          </svg>
+        </button>
+        <button
+          type="button"
+          className={`${resultActionBtn} bg-transparent`}
+          disabled={activeStep === 0}
+          aria-label="Restart from first step"
+          onClick={() => {
+            setPlaying(false)
+            setActiveStep(0)
+          }}
+        >
+          <svg
+            aria-hidden="true"
+            className="size-[1.1rem]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="square"
+            strokeLinejoin="miter"
+          >
+            <path d="M4 4v6h6" />
+            <path d="M4.8 9A8 8 0 1 1 6 17.3" />
+          </svg>
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -397,7 +460,6 @@ function OpsBoard({
   stepCount,
   step,
   result,
-  playing,
   setPlaying,
   setActiveStep,
 }: {
@@ -405,7 +467,6 @@ function OpsBoard({
   stepCount: number
   step: VmTraceStep
   result: InspectResult
-  playing: boolean
   setPlaying: (value: boolean) => void
   setActiveStep: (value: number) => void
 }) {
@@ -417,34 +478,32 @@ function OpsBoard({
   }
 
   return (
-    <section className="my-2 py-2 border-t border-line">
-      <div className="flex flex-nowrap items-center justify-between gap-4 max-md:flex-col max-md:items-stretch max-md:gap-2">
-        <p className="m-0 flex min-w-0 flex-1 flex-nowrap items-baseline gap-x-2 overflow-hidden p-0 text-sm leading-snug whitespace-nowrap tabular-nums text-muted max-md:text-xs">
-          <span className="inline-flex shrink-0 items-baseline gap-1">
-            <span>pc</span>
-            <span className="inline-block text-right text-fg" style={{ width: `${pcDigits}ch` }}>{step.pc}</span>
-          </span>
-          <span className="shrink-0 text-gutter">·</span>
-          <span className="inline-block shrink-0 truncate text-fg" style={{ width: `${directiveChars}ch` }}>
-            {directiveText(step)}
-          </span>
+    <section className="mb-2 py-2 border-t border-line">
+      <div className="flex flex-nowrap items-start justify-between gap-4 max-md:flex-col max-md:items-stretch max-md:gap-2">
+        <p className="m-0 flex h-8 items-center text-xs text-gutter max-md:hidden">
+          <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">←</kbd>{' '}
+          <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">→</kbd> step ·{' '}
+          <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">p</kbd> play ·{' '}
+          <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">[</kbd>{' '}
+          <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">]</kbd> program ·{' '}
+          <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">1</kbd>–<kbd className="rounded bg-highlight px-1 py-0.5 text-fg">3</kbd> pick ·{' '}
+          <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">r</kbd> restart
         </p>
         <StepTransport
           activeStep={activeStep}
           stepCount={stepCount}
-          playing={playing}
-          setPlaying={setPlaying}
           setActiveStep={pauseAndSetStep}
         />
       </div>
-      <p className="mt-3 text-xs text-gutter max-md:hidden">
-        <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">←</kbd>{' '}
-        <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">→</kbd> step ·{' '}
-        <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">p</kbd> play ·{' '}
-        <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">[</kbd>{' '}
-        <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">]</kbd> program ·{' '}
-        <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">1</kbd>–<kbd className="rounded bg-highlight px-1 py-0.5 text-fg">3</kbd> pick ·{' '}
-        <kbd className="rounded bg-highlight px-1 py-0.5 text-fg">r</kbd> restart
+      <p className="mt-3 flex min-w-0 flex-nowrap items-baseline gap-x-2 overflow-hidden text-sm leading-snug whitespace-nowrap tabular-nums text-muted max-md:text-xs">
+        <span className="inline-flex shrink-0 items-baseline gap-1">
+          <span>pc</span>
+          <span className="inline-block text-right text-fg" style={{ width: `${pcDigits}ch` }}>{step.pc}</span>
+        </span>
+        <span className="shrink-0 text-gutter">·</span>
+        <span className="inline-block shrink-0 truncate text-fg" style={{ width: `${directiveChars}ch` }}>
+          {directiveText(step)}
+        </span>
       </p>
     </section>
   )
@@ -453,14 +512,10 @@ function OpsBoard({
 function StepTransport({
   activeStep,
   stepCount,
-  playing,
-  setPlaying,
   setActiveStep,
 }: {
   activeStep: number
   stepCount: number
-  playing: boolean
-  setPlaying: (value: boolean) => void
   setActiveStep: (value: number) => void
 }) {
   const atStart = activeStep === 0
@@ -470,57 +525,34 @@ function StepTransport({
   const slotWidth = `${digits}ch`
 
   return (
-    <div className="flex shrink-0 flex-col items-center gap-1.5 self-start max-md:w-full max-md:flex-row max-md:items-center max-md:justify-between">
-      <div className="inline-flex items-center gap-0.5" aria-label="execution steps">
-        <button
-          type="button"
-          className={transportBtn}
-          disabled={atStart}
-          aria-label="Previous step"
-          onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
-        >
-          ‹
-        </button>
-        <span
-          className="inline-flex items-baseline justify-center px-1.5 text-[0.88rem] tabular-nums"
-          style={{ minWidth: counterWidth }}
-          aria-live="polite"
-        >
-          <span className="text-right text-fg" style={{ width: slotWidth }}>{activeStep + 1}</span>
-          <span className="px-0.5 text-gutter">/</span>
-          <span className="text-left text-gutter" style={{ width: slotWidth }}>{stepCount}</span>
-        </span>
-        <button
-          type="button"
-          className={transportBtn}
-          disabled={atEnd}
-          aria-label="Next step"
-          onClick={() => setActiveStep(Math.min(stepCount - 1, activeStep + 1))}
-        >
-          ›
-        </button>
-      </div>
-      <div className="inline-flex items-center gap-2">
-        <button
-          type="button"
-          className="rounded-md bg-transparent px-2 py-0.5 text-[0.78rem] tracking-wide text-muted hover:bg-highlight hover:text-accent disabled:opacity-30"
-          disabled={stepCount <= 1}
-          aria-pressed={playing}
-          aria-label={playing ? 'Pause auto play' : 'Auto play steps'}
-          onClick={() => setPlaying(!playing)}
-        >
-          {playing ? 'pause' : 'play'}
-        </button>
-        <button
-          type="button"
-          className="rounded-md bg-transparent px-2 py-0.5 text-[0.78rem] tracking-wide text-muted hover:bg-highlight hover:text-accent disabled:opacity-30"
-          disabled={atStart}
-          aria-label="Restart from first step"
-          onClick={() => setActiveStep(0)}
-        >
-          restart
-        </button>
-      </div>
+    <div className="ml-auto inline-flex shrink-0 items-center gap-0.5 self-start" aria-label="execution steps">
+      <button
+        type="button"
+        className={transportBtn}
+        disabled={atStart}
+        aria-label="Previous step"
+        onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
+      >
+        ‹
+      </button>
+      <span
+        className="inline-flex items-baseline justify-center px-1.5 text-[0.88rem] tabular-nums"
+        style={{ minWidth: counterWidth }}
+        aria-live="polite"
+      >
+        <span className="text-right text-fg" style={{ width: slotWidth }}>{activeStep + 1}</span>
+        <span className="px-0.5 text-gutter">/</span>
+        <span className="text-left text-gutter" style={{ width: slotWidth }}>{stepCount}</span>
+      </span>
+      <button
+        type="button"
+        className={transportBtn}
+        disabled={atEnd}
+        aria-label="Next step"
+        onClick={() => setActiveStep(Math.min(stepCount - 1, activeStep + 1))}
+      >
+        ›
+      </button>
     </div>
   )
 }
@@ -602,35 +634,32 @@ function DirectivePanel({ result, step }: { result: InspectResult, step: VmTrace
 
 function StatePanel({ step }: { step: VmTraceStep }) {
   return (
-    <section className="mt-2 min-w-0 overflow-x-hidden overflow-y-visible border-t border-line pt-3 max-md:mt-0 max-md:border-t-0 max-md:pt-0">
+    <section className="min-w-0 overflow-x-hidden overflow-y-visible">
       <h2 className={panelTitle}>state</h2>
-      <table className="w-auto max-w-full table-fixed border-collapse text-[0.84rem] leading-snug max-md:text-[0.8rem]">
-        <colgroup>
-          <col className="w-44 max-md:w-36" />
-          <col className="w-56 max-md:w-44" />
-        </colgroup>
-        <tbody>
-          {stateFields.map(field => (
-            <tr key={field.alias} className={`border-t border-line ${field.rowClass}`}>
-              <th scope="row" className="px-2.5 py-2 text-left align-top font-normal text-fg">
-                <span>{field.name}</span>
-                <span className="text-gutter"> ({field.alias})</span>
-              </th>
-              <td className="overflow-hidden px-2.5 py-2 text-left align-top">
-                <code className={`${stateCell} ${field.codeClass}`}>{field.format(step.after)}</code>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <dl className="m-0 text-[0.84rem] leading-snug max-md:text-[0.8rem]">
+        {stateFields.map((field, index) => (
+          <div
+            key={field.alias}
+            className={`${index > 0 ? 'border-t border-line' : ''} py-2.5 first:pt-0 last:pb-0`}
+          >
+            <dt>
+              <code className="block text-fg">{field.alias}</code>
+              <span className="block text-[0.68rem] text-gutter">{field.name}</span>
+            </dt>
+            <dd className="m-0 mt-1.5">
+              <code className={stateCell}>{field.format(step.after)}</code>
+            </dd>
+          </div>
+        ))}
+      </dl>
     </section>
   )
 }
 
 function TokenPanel({ result, step }: { result: InspectResult, step: VmTraceStep }) {
   return (
-    <section className="mt-4 border-t border-line pt-4">
-      <h2 className="m-0 mb-1.5 text-[0.65rem] font-normal tracking-[0.14em] text-muted uppercase">tokens</h2>
+    <section className="min-w-0 max-md:border-t max-md:border-line max-md:pt-4">
+      <h2 className={panelTitle}>tokens</h2>
       <ol className="m-0 flex list-none flex-wrap gap-x-2 gap-y-1 p-0 text-[0.72rem] leading-snug">
         {result.tokens.map((token, index) => (
           <li
@@ -744,19 +773,25 @@ export function ExecutionView() {
           <SourcePanel code={program.code} step={step} />
           <DirectivePanel result={result} step={step} />
         </section>
-        <ResultRow step={step} trace={result.trace} />
+        <ResultRow
+          activeStep={activeStep}
+          playing={playing}
+          setPlaying={setPlaying}
+          setActiveStep={setActiveStep}
+          step={step}
+          trace={result.trace}
+        />
         <OpsBoard
           activeStep={activeStep}
           stepCount={result.trace.length}
           step={step}
           result={result}
-          playing={playing}
           setPlaying={setPlaying}
           setActiveStep={setActiveStep}
         />
       </section>
       <section
-        className="max-md:border-t max-md:border-line max-md:pt-4 max-md:pb-2"
+        className="mt-2 grid grid-cols-2 items-start gap-6 border-t border-line pt-3 max-md:grid-cols-1 max-md:gap-4 max-md:pb-2"
         aria-label="vm state and tokens"
       >
         <StatePanel step={step} />
