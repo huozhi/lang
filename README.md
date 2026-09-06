@@ -12,6 +12,21 @@ bun run exec -- --step examples/if-else
 
 Programs live in `examples/`. Use Enter or `n` for next, `p` for previous, and `q` to quit in step mode.
 
+## Website
+
+The website uses [Devjar](https://devjar.vercel.app/) (`devjar@1.0.0-next.4`). Requires Node.js 22+ and Bun.
+
+```sh
+bun install
+bun run web:dev    # http://localhost:3000
+bun run web:build  # Static export to web/dist/
+bun run web:start  # Preview the export
+```
+
+The complete website lives in `web/`: routes are in `web/pages/`, with shared UI, styles, and site assets alongside them. Devjar builds `web/` and exports the site to `web/dist/`. The website consumes the language runtime as its local `langsagne` package dependency; its library build remains in the root `dist/`. Deploy `web/dist/` to a static host. Development and builds need access to the package CDN; production dependencies are included in the export.
+
+For Vercel, use the repository root as the project Root Directory and Node.js 22 or newer. `vercel.json` selects the Other framework preset and website build command. Devjar generates `.vercel/output/` automatically on Vercel, including cache headers for hashed assets; leave the Output Directory override unset.
+
 ## Language
 
 ### Syntax

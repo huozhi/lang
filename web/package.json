@@ -1,8 +1,11 @@
 {
   "private": true,
+  "dependencies": {
+    "langsagne": "file:.."
+  },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
+    "dev": "devjar dev",
+    "build": "devjar build",
+    "start": "devjar start"
   }
 }
