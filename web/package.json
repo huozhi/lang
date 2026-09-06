@@ -1,8 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
+    "dev": "cd .. && bun run web:dev",
+    "build": "cd .. && bun run web:build",
+    "start": "cd .. && bun run web:start"
   }
 }
