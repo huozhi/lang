@@ -20,7 +20,7 @@
     "jsx": "react-jsx"
   },
   "include": [
-    "../pages/**/*.tsx",
+    "pages/**/*.tsx",
     "**/*.mts",
     "**/*.ts",
     "**/*.tsx"

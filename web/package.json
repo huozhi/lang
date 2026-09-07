@@ -1,8 +1,11 @@
 {
   "private": true,
+  "dependencies": {
+    "langsagne": "file:.."
+  },
   "scripts": {
-    "dev": "cd .. && bun run web:dev",
-    "build": "cd .. && bun run web:build",
-    "start": "cd .. && bun run web:start"
+    "dev": "devjar dev",
+    "build": "devjar build",
+    "start": "devjar start"
   }
 }

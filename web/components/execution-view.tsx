@@ -6,7 +6,7 @@ import {
   type InspectToken,
   type RuntimeValue,
   type VmTraceStep,
-} from '../../src/index'
+} from 'langsagne'
 
 type Program = {
   name: string

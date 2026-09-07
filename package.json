@@ -15,9 +15,9 @@
     "build": "rm -rf dist && bun build ./src/index.ts --outdir ./dist --target node --format esm",
     "test": "bun test",
     "exec": "bun scripts/exec.ts",
-    "web:build": "devjar build",
-    "web:dev": "devjar dev",
-    "web:start": "devjar start",
+    "web:build": "bun run build && devjar build web",
+    "web:dev": "bun run build && devjar dev web",
+    "web:start": "devjar start web",
     "prepublishOnly": "bun run build"
   },
   "packageManager": "bun@1.3.13",
